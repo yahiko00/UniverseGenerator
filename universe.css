@@ -1,0 +1,41 @@
+﻿body
+{
+    font-family: 'Segoe UI', sans-serif
+}
+
+span {
+    font-style: italic
+}
+
+h2 {
+  text-align: center;
+}
+
+h3 {
+  text-align: center;
+}
+
+circle {
+  fill: yellow;
+  stroke: white;
+  stroke-width: 1;
+}
+
+line {
+  stroke: white;
+  stroke-width: 1;
+}
+
+#layerLinks {
+  position: absolute;
+  background-color: black;
+}
+
+#layerPlaces {
+  position: absolute;
+}
+
+#parameters {
+  float: right;
+  padding-right: 5em;
+}

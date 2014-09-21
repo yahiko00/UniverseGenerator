@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Universe Generator</title>
+  <link rel="stylesheet" href="universe.css" type="text/css" />
+  <script src="Scripts/delaunay/delaunay.js"></script>
+  <script src="universe.js"></script>
+  <script src="Scripts/jquery/jquery-2.1.1.js"></script>
+  <script src="Scripts/jscolor/jscolor.js"></script>
+  <script src="universeUI.js"></script>
+</head>
+<body>
+  <h2>Universe Generator</h2>
+  <svg id="layerLinks"></svg>
+  <svg id="layerPlaces"></svg>
+
+  <div id="parameters">
+    <h3>Parameters</h3>
+    <span>Width (px) : </span><input type="text" id="width" size="10" /><br />
+    <span>Height (px) : </span><input type="text" id="height" size="10" /><br />
+    <span># Locations : </span><input type="text" id="places" size="10" /><br />
+    <span>Margin (%) : </span><input type="text" id="margin" size="10" /><br />
+    <span>Gap (%) : </span><input type="text" id="gap" size="10" /><br />
+    <span>Connection Length (%) : </span><input type="text" id="connection" size="10" /><br />
+    <span>Background color (RGB) : </span><input type="text" id="backgroundColor" class="color" size="10" /><br />
+    <span>Location fill color (RGB) : </span><input type="text" id="locationFillColor" class="color" size="10" /><br />
+    <span>Location outline color (RGB) : </span><input type="text" id="locationOutlineColor" class="color" size="10" /><br />
+    <span>Link color (RGB) : </span><input type="text" id="linkColor" class="color" size="10" /><br />
+    <br />
+    <input type="button" id="generate" value="Generate" /><br />
+  </div>
+</body>
+</html>
