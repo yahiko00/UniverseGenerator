@@ -7,6 +7,8 @@ This program has been implemented in TypeScript (and thus produce Javascript fil
 
 The main algorithm is based on Delaunay Triangulation. I used an implementation made by ironwallaby (https://github.com/ironwallaby).
 
+A live demo is available here: http://yahiko.co.nf/universeGenerator/
+
 Here is a short explanation of parameters in the user interface :
 
 - Width (px)                   : width of the universe in pixels.
