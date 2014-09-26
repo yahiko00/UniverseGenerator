@@ -1,3 +1,4 @@
+/// <reference path="Scripts/rng/rng.ts"/>
 /// <reference path="Scripts/delaunay/delaunay.d.ts"/>
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -31,13 +32,17 @@ var Place = (function (_super) {
 })(Point);
 
 var Universe = (function () {
-    function Universe(dimX, dimY, maxPlaces, margin, gap, connectionLength) {
+    function Universe(dimX, dimY, maxPlaces, margin, gap, connectionLength, distribution, seed) {
+        if (typeof distribution === "undefined") { distribution = "uniform"; }
+        if (typeof seed === "undefined") { seed = Date.now(); }
         this.dimX = dimX;
         this.dimY = dimY;
         this.maxPlaces = maxPlaces;
         this.margin = margin;
         this.gap = gap;
         this.connectionLength = connectionLength;
+        this.distribution = distribution;
+        this.seed = seed;
 
         this.generate();
     }
@@ -46,14 +51,22 @@ var Universe = (function () {
     Universe.prototype.generate = function () {
         console.time("Generate");
 
+        // Creation of RNG
+        this.rng = new SeededRNG(this.seed, 4, this.distribution == "gaussian" ? 1 : 0);
+
         // Creation of places
         this.places = [];
         var vertices = [];
         var i = 0;
         var pos = new Point(0, 0);
         while (i < this.maxPlaces) {
-            pos.x = this.margin + (1 - 2 * this.margin) * Math.random();
-            pos.y = this.margin + (1 - 2 * this.margin) * Math.random();
+            if (this.distribution == "uniform") {
+                pos.x = this.margin + (1 - 2 * this.margin) * this.rng.rand();
+                pos.y = this.margin + (1 - 2 * this.margin) * this.rng.rand();
+            } else {
+                pos.x = 0.5 + (0.5 - this.margin) * this.rng.rand() / 3;
+                pos.y = 0.5 + (0.5 - this.margin) * this.rng.rand() / 3;
+            }
 
             if (this.isValidLocation(pos)) {
                 this.places.push(new Place(pos.x, pos.y));

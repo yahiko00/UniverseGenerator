@@ -4,6 +4,11 @@ window.onload = function () {
     universe.draw();
 
     // Default value on parameters
+    $("#seed").val(universe.seed.toString());
+    if (universe.distribution == "uniform")
+        $("#uniform").attr("checked", true);
+else if (universe.distribution == "gaussian")
+        $("#gaussian").attr("checked", true);
     $("#width").val(universe.dimX.toString());
     $("#height").val(universe.dimY.toString());
     $("#places").val(universe.maxPlaces.toString());
@@ -16,6 +21,11 @@ window.onload = function () {
     $("#linkColor").val(rgb2hex($("line").css('stroke')));
 
     // Listeners on change
+    $("#seed").on("change", changeSeed);
+    $("#uniform").on("change", changeDistribution);
+    $("#gaussian").on("change", changeDistribution);
+
+    $("#seedTime").on("click", setSeed);
     $("#width").on("change", changeDimX);
     $("#height").on("change", changeDimY);
     $("#places").on("change", changeMaxPlaces);
@@ -28,6 +38,7 @@ window.onload = function () {
     $("#linkColor").on("change", changeLinkColor);
 
     $("#generate").on("click", universe.refresh);
+    $("#seedGenerate").on("click", seedGenerate);
 };
 
 var hexDigits = new Array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f");
@@ -49,6 +60,29 @@ function hex2rgb(hex) {
     var g = parseInt(hex.substr(2, 2), 16);
     var b = parseInt(hex.substr(4, 2), 16);
     return "rgb (" + r + ", " + g + ", " + b + ")";
+}
+
+function changeSeed(event) {
+    var target = event.target;
+    var value = parseInt(target.value);
+    universe.seed = value;
+}
+
+function setSeed(event) {
+    var seedHTML = document.getElementById("seed");
+    seedHTML.value = Date.now().toString();
+    event.target = seedHTML;
+    changeSeed(event);
+}
+
+function changeDistribution(event) {
+    var uniformHTML = document.getElementById("uniform");
+    var gaussianHTML = document.getElementById("gaussian");
+
+    if (uniformHTML.checked)
+        universe.distribution = "uniform";
+else if (gaussianHTML.checked)
+        universe.distribution = "gaussian";
 }
 
 function changeDimX(event) {
@@ -101,4 +135,9 @@ function changeLocationOutlineColor(event) {
 
 function changeLinkColor(event) {
     $("line").css("stroke", "#" + $("#linkColor").val());
+}
+
+function seedGenerate(event) {
+    setSeed(event);
+    universe.refresh();
 }

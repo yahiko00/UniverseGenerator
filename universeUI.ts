@@ -5,6 +5,9 @@ window.onload = () => {
   universe.draw();
 
   // Default value on parameters
+  $("#seed").val(universe.seed.toString());
+  if (universe.distribution == "uniform") $("#uniform").attr("checked", true);
+  else if (universe.distribution == "gaussian") $("#gaussian").attr("checked", true);
   $("#width").val(universe.dimX.toString());
   $("#height").val(universe.dimY.toString());
   $("#places").val(universe.maxPlaces.toString());
@@ -17,6 +20,11 @@ window.onload = () => {
   $("#linkColor").val(rgb2hex($("line").css('stroke')));
 
   // Listeners on change
+  $("#seed").on("change", changeSeed);
+  $("#uniform").on("change", changeDistribution);
+  $("#gaussian").on("change", changeDistribution);
+
+  $("#seedTime").on("click", setSeed);
   $("#width").on("change", changeDimX);
   $("#height").on("change", changeDimY);
   $("#places").on("change", changeMaxPlaces);
@@ -29,6 +37,7 @@ window.onload = () => {
   $("#linkColor").on("change", changeLinkColor);
 
   $("#generate").on("click", universe.refresh);
+  $("#seedGenerate").on("click", seedGenerate);
 };
 
 var hexDigits = new Array
@@ -51,6 +60,27 @@ function hex2rgb(hex: string): string {
   var g = parseInt(hex.substr(2, 2), 16);
   var b = parseInt(hex.substr(4, 2), 16);
   return "rgb (" + r + ", " + g + ", " + b + ")";
+}
+
+function changeSeed(event: BaseJQueryEventObject) {
+  var target = <HTMLInputElement>event.target;
+  var value = parseInt(target.value);
+  universe.seed = value;
+}
+
+function setSeed(event: BaseJQueryEventObject) {
+  var seedHTML = <HTMLInputElement>document.getElementById("seed");
+  seedHTML.value = Date.now().toString();
+  event.target = seedHTML;
+  changeSeed(event);
+}
+
+function changeDistribution(event: BaseJQueryEventObject) {
+  var uniformHTML = <HTMLInputElement>document.getElementById("uniform");
+  var gaussianHTML = <HTMLInputElement>document.getElementById("gaussian");
+
+  if (uniformHTML.checked) universe.distribution = "uniform";
+  else if (gaussianHTML.checked) universe.distribution = "gaussian";
 }
 
 function changeDimX(event: BaseJQueryEventObject) {
@@ -103,4 +133,9 @@ function changeLocationOutlineColor(event: BaseJQueryEventObject) {
 
 function changeLinkColor(event: BaseJQueryEventObject) {
   $("line").css("stroke", "#" + $("#linkColor").val());
+}
+
+function seedGenerate(event: BaseJQueryEventObject) {
+  setSeed(event);
+  universe.refresh();
 }

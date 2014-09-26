@@ -5,6 +5,7 @@
   <meta charset="utf-8" />
   <title>Universe Generator</title>
   <link rel="stylesheet" href="universe.css" type="text/css" />
+  <script src="Scripts/rng/rng.js"></script>
   <script src="Scripts/delaunay/delaunay.js"></script>
   <script src="universe.js"></script>
   <script src="Scripts/jquery/jquery-2.1.1.js"></script>
@@ -18,6 +19,10 @@
 
   <div id="parameters">
     <h3>Parameters</h3>
+    <span>Seed : </span><input type="text" id="seed" /><input type="button" id="seedTime" value="Time" /><br />
+    <span>Distribution : </span>
+      <input type="radio" name="distribution" id="uniform" /><span>Uniform  </span>
+      <input type="radio" name="distribution" id="gaussian" /><span>Gaussian</span><br />
     <span>Width (px) : </span><input type="text" id="width" size="10" /><br />
     <span>Height (px) : </span><input type="text" id="height" size="10" /><br />
     <span># Locations : </span><input type="text" id="places" size="10" /><br />
@@ -29,7 +34,8 @@
     <span>Location outline color (RGB) : </span><input type="text" id="locationOutlineColor" class="color" size="10" /><br />
     <span>Link color (RGB) : </span><input type="text" id="linkColor" class="color" size="10" /><br />
     <br />
-    <input type="button" id="generate" value="Generate" /><br />
+    <input type="button" id="generate" value="Generate" />
+    <input type="button" id="seedGenerate" value="New Seed & Generate" /><br />
   </div>
 </body>
 </html>

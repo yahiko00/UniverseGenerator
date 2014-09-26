@@ -1,3 +1,4 @@
+/// <reference path="Scripts/rng/rng.ts"/>
 /// <reference path="Scripts/delaunay/delaunay.d.ts"/>
 
 function distance(p1: Point, p2: Point): number {
@@ -37,15 +38,21 @@ class Universe {
   margin: number; // margin in % where no place can appear
   gap: number; // minimal distance between two locations
   connectionLength: number; // maximal connection length in % (must be > gap)
+  distribution: string;
+  seed: number;
+
+  rng: SeededRNG;
 
   constructor(dimX: number, dimY: number, maxPlaces: number,
-    margin: number, gap: number, connectionLength: number) {
+    margin: number, gap: number, connectionLength: number, distribution: string = "uniform", seed: number = Date.now()) {
     this.dimX = dimX;
     this.dimY = dimY;
     this.maxPlaces = maxPlaces;
     this.margin = margin;
     this.gap = gap;
     this.connectionLength = connectionLength;
+    this.distribution = distribution;
+    this.seed = seed;
 
     this.generate();
   }
@@ -54,14 +61,23 @@ class Universe {
   // Generate places and links
   generate() {
     console.time("Generate");
+    // Creation of RNG
+    this.rng = new SeededRNG(this.seed, 4, this.distribution == "gaussian" ? 1 : 0); // Xorshift
+
     // Creation of places
     this.places = [];
     var vertices: number[][] = [];
     var i = 0;
     var pos = new Point(0, 0);
     while (i < this.maxPlaces) {
-      pos.x = this.margin + (1 - 2 * this.margin) * Math.random();
-      pos.y = this.margin + (1 - 2 * this.margin) * Math.random();
+      if (this.distribution == "uniform") {
+        pos.x = this.margin + (1 - 2 * this.margin) * this.rng.rand();
+        pos.y = this.margin + (1 - 2 * this.margin) * this.rng.rand();
+      }
+      else {
+        pos.x = 0.5 + (0.5 - this.margin) * this.rng.rand() / 3;
+        pos.y = 0.5 + (0.5 - this.margin) * this.rng.rand() / 3;
+      }
 
       if (this.isValidLocation(pos)) {
         this.places.push(new Place(pos.x, pos.y));
