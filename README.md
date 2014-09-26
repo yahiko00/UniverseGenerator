@@ -11,6 +11,8 @@ A live demo is available here: http://yahiko.co.nf/universeGenerator/
 
 Here is a short explanation of parameters in the user interface :
 
+- Seed                         : number generating the universe.
+- Distribution                 : distribution of the locations.
 - Width (px)                   : width of the universe in pixels.
 - Height (px)                  : height of the universe in pixels.
 - Number of Locations          : number of locations generated.
