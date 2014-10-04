@@ -15,13 +15,13 @@ h3 {
   text-align: center;
 }
 
-circle {
+.place {
   fill: yellow;
   stroke: white;
   stroke-width: 1;
 }
 
-line {
+.link {
   stroke: white;
   stroke-width: 1;
 }
@@ -38,4 +38,14 @@ line {
 #parameters {
   float: right;
   padding-right: 5em;
+}
+
+.tooltip {
+  color: white;
+  text-shadow:
+  -1px -1px 0 #000,
+  1px -1px 0 #000,
+  -1px 1px 0 #000,
+  1px 1px 0 #000;
+  z-index: 100;
 }

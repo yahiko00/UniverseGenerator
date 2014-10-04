@@ -1,5 +1,6 @@
-/// <reference path="Scripts/rng/rng.ts"/>
+﻿/// <reference path="Scripts/rng/rng.ts"/>
 /// <reference path="Scripts/delaunay/delaunay.d.ts"/>
+/// <reference path="Scripts/namegen/namegen.ts"/>
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -23,9 +24,10 @@ var Point = (function () {
 
 var Place = (function (_super) {
     __extends(Place, _super);
-    function Place(x, y) {
+    function Place(x, y, name) {
         _super.call(this, x, y);
         this.id = "place" + ID++;
+        this.name = name;
         this.links = [];
     }
     return Place;
@@ -43,6 +45,9 @@ var Universe = (function () {
         this.connectionLength = connectionLength;
         this.distribution = distribution;
         this.seed = seed;
+        this.rngPlace = new SeededRNG(this.seed, 4, this.distribution == "gaussian" ? 1 : 0);
+        this.rngName = new SeededRNG(this.seed, 4, 0);
+        this.nameGen = new NameGeneratorElite(this.rngName);
 
         this.generate();
     }
@@ -51,8 +56,9 @@ var Universe = (function () {
     Universe.prototype.generate = function () {
         console.time("Generate");
 
-        // Creation of RNG
-        this.rng = new SeededRNG(this.seed, 4, this.distribution == "gaussian" ? 1 : 0);
+        // Initialization of RNGs
+        this.rngPlace.randomSeed = this.seed;
+        this.rngName.randomSeed = this.seed;
 
         // Creation of places
         this.places = [];
@@ -61,15 +67,15 @@ var Universe = (function () {
         var pos = new Point(0, 0);
         while (i < this.maxPlaces) {
             if (this.distribution == "uniform") {
-                pos.x = this.margin + (1 - 2 * this.margin) * this.rng.rand();
-                pos.y = this.margin + (1 - 2 * this.margin) * this.rng.rand();
+                pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
+                pos.y = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
             } else {
-                pos.x = 0.5 + (0.5 - this.margin) * this.rng.rand() / 3;
-                pos.y = 0.5 + (0.5 - this.margin) * this.rng.rand() / 3;
+                pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
+                pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
             }
 
             if (this.isValidLocation(pos)) {
-                this.places.push(new Place(pos.x, pos.y));
+                this.places.push(new Place(pos.x, pos.y, this.nameGen.randName()));
                 vertices.push([pos.x, pos.y]);
                 i++;
             }
@@ -139,6 +145,7 @@ var Universe = (function () {
             // Draw a location
             var element = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             layerPlaces.appendChild(element);
+            element.setAttribute("class", "place");
             element.setAttribute("id", place.id);
             element.setAttribute("cx", cx.toString());
             element.setAttribute("cy", cy.toString());
@@ -162,6 +169,7 @@ var Universe = (function () {
                     // Draw a link
                     var element = document.createElementNS("http://www.w3.org/2000/svg", "line");
                     layerLinks.appendChild(element);
+                    element.setAttribute("class", "link");
                     element.setAttribute("id", place.id + link.id);
                     element.setAttribute("x1", x1.toString());
                     element.setAttribute("y1", y1.toString());
@@ -177,6 +185,18 @@ var Universe = (function () {
     Universe.prototype.refresh = function () {
         universe.generate();
         universe.draw();
+    };
+
+    // ***********************************
+    // Return a place with its ID
+    Universe.prototype.getPlace = function (id) {
+        for (var i = 0; i < this.places.length; i++) {
+            var place = this.places[i];
+            if (place.id == id) {
+                return place;
+            }
+        }
+        return null;
     };
     return Universe;
 })();

@@ -1,4 +1,4 @@
-/// <reference path="universe.ts"/>
+﻿/// <reference path="universe.ts"/>
 /// <reference path="Scripts/jquery/jquery.d.ts"/>
 
 window.onload = () => {
@@ -6,8 +6,8 @@ window.onload = () => {
 
   // Default value on parameters
   $("#seed").val(universe.seed.toString());
-  if (universe.distribution == "uniform") $("#uniform").attr("checked", true);
-  else if (universe.distribution == "gaussian") $("#gaussian").attr("checked", true);
+  if (universe.distribution == "uniform") $("#uniform").attr("checked", "checked");
+  else if (universe.distribution == "gaussian") $("#gaussian").attr("checked", "checked");
   $("#width").val(universe.dimX.toString());
   $("#height").val(universe.dimY.toString());
   $("#places").val(universe.maxPlaces.toString());
@@ -19,7 +19,7 @@ window.onload = () => {
   $("#locationOutlineColor").val(rgb2hex($("circle").css("stroke")));
   $("#linkColor").val(rgb2hex($("line").css('stroke')));
 
-  // Listeners on change
+  // Listeners
   $("#seed").on("change", changeSeed);
   $("#uniform").on("change", changeDistribution);
   $("#gaussian").on("change", changeDistribution);
@@ -38,6 +38,9 @@ window.onload = () => {
 
   $("#generate").on("click", universe.refresh);
   $("#seedGenerate").on("click", seedGenerate);
+
+  $(".place").on("mouseenter", tooltipPlaceShow);
+  $(".place").on("mouseleave", tooltipPlaceHide);
 };
 
 var hexDigits = new Array
@@ -138,4 +141,21 @@ function changeLinkColor(event: BaseJQueryEventObject) {
 function seedGenerate(event: BaseJQueryEventObject) {
   setSeed(event);
   universe.refresh();
+}
+
+function tooltipPlaceShow(event: BaseJQueryEventObject) {
+  var target = event.target;
+  var id = target["id"];
+  var name = universe.getPlace(id).name;
+  var tooltip = document.createElement("div");
+  tooltip.innerHTML = name.substr(0, 1).toUpperCase() + name.substr(1);
+  tooltip.setAttribute("class", "tooltip");
+  tooltip.setAttribute("style", "position: absolute; " +
+    "top: " + (event.pageY - 25).toString() + "px; " +
+    "left: " + (event.pageX).toString() + "px;");
+  document.body.appendChild(tooltip);
+}
+
+function tooltipPlaceHide(event: BaseJQueryEventObject) {
+  $(".tooltip").remove();
 }

@@ -1,5 +1,6 @@
-/// <reference path="Scripts/rng/rng.ts"/>
+﻿/// <reference path="Scripts/rng/rng.ts"/>
 /// <reference path="Scripts/delaunay/delaunay.d.ts"/>
+/// <reference path="Scripts/namegen/namegen.ts"/>
 
 function distance(p1: Point, p2: Point): number {
   return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
@@ -12,7 +13,7 @@ class Point {
   constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
-  }
+  } // constructor
 
   distance(p: Point): number {
     return distance(this, p);
@@ -21,11 +22,13 @@ class Point {
 
 class Place extends Point {
   id: string;
+  name: string
   links: Place[];
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, name: string) {
     super(x, y);
     this.id = "place" + ID++;
+    this.name = name;
     this.links = [];
   }
 } // Place
@@ -39,9 +42,11 @@ class Universe {
   gap: number; // minimal distance between two locations
   connectionLength: number; // maximal connection length in % (must be > gap)
   distribution: string;
+  nameGen: NameGenerator;
   seed: number;
 
-  rng: SeededRNG;
+  rngPlace: SeededRNG;
+  rngName: SeededRNG;
 
   constructor(dimX: number, dimY: number, maxPlaces: number,
     margin: number, gap: number, connectionLength: number, distribution: string = "uniform", seed: number = Date.now()) {
@@ -53,6 +58,9 @@ class Universe {
     this.connectionLength = connectionLength;
     this.distribution = distribution;
     this.seed = seed;
+    this.rngPlace = new SeededRNG(this.seed, 4, this.distribution == "gaussian" ? 1 : 0); // Xorshift
+    this.rngName = new SeededRNG(this.seed, 4, 0); // Xorshift
+    this.nameGen = new NameGeneratorElite(this.rngName);
 
     this.generate();
   }
@@ -61,8 +69,9 @@ class Universe {
   // Generate places and links
   generate() {
     console.time("Generate");
-    // Creation of RNG
-    this.rng = new SeededRNG(this.seed, 4, this.distribution == "gaussian" ? 1 : 0); // Xorshift
+    // Initialization of RNGs
+    this.rngPlace.randomSeed = this.seed;
+    this.rngName.randomSeed = this.seed;
 
     // Creation of places
     this.places = [];
@@ -71,16 +80,16 @@ class Universe {
     var pos = new Point(0, 0);
     while (i < this.maxPlaces) {
       if (this.distribution == "uniform") {
-        pos.x = this.margin + (1 - 2 * this.margin) * this.rng.rand();
-        pos.y = this.margin + (1 - 2 * this.margin) * this.rng.rand();
+        pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
+        pos.y = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
       }
       else {
-        pos.x = 0.5 + (0.5 - this.margin) * this.rng.rand() / 3;
-        pos.y = 0.5 + (0.5 - this.margin) * this.rng.rand() / 3;
+        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
+        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
       }
 
       if (this.isValidLocation(pos)) {
-        this.places.push(new Place(pos.x, pos.y));
+        this.places.push(new Place(pos.x, pos.y, this.nameGen.randName()));
         vertices.push([pos.x, pos.y]);
         i++;
       }
@@ -145,6 +154,7 @@ class Universe {
       // Draw a location
       var element = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       layerPlaces.appendChild(element);
+      element.setAttribute("class", "place");
       element.setAttribute("id", place.id);
       element.setAttribute("cx", cx.toString());
       element.setAttribute("cy", cy.toString());
@@ -168,6 +178,7 @@ class Universe {
           // Draw a link
           var element = document.createElementNS("http://www.w3.org/2000/svg", "line");
           layerLinks.appendChild(element);
+          element.setAttribute("class", "link");
           element.setAttribute("id", place.id + link.id);
           element.setAttribute("x1", x1.toString());
           element.setAttribute("y1", y1.toString());
@@ -184,6 +195,18 @@ class Universe {
     universe.generate();
     universe.draw();
   } // refresh
+
+  // ***********************************
+  // Return a place with its ID
+  getPlace(id: string) {
+    for (var i = 0; i < this.places.length; i++) {
+      var place = this.places[i];
+      if (place.id == id) {
+        return place;
+      }
+    } // for i
+    return null;
+  } // getPlace
 } // Universe
 
 var ID: number = 0;

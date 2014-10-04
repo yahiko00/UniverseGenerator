@@ -1,4 +1,4 @@
-/// <reference path="universe.ts"/>
+﻿/// <reference path="universe.ts"/>
 /// <reference path="Scripts/jquery/jquery.d.ts"/>
 window.onload = function () {
     universe.draw();
@@ -6,9 +6,9 @@ window.onload = function () {
     // Default value on parameters
     $("#seed").val(universe.seed.toString());
     if (universe.distribution == "uniform")
-        $("#uniform").attr("checked", true);
+        $("#uniform").attr("checked", "checked");
 else if (universe.distribution == "gaussian")
-        $("#gaussian").attr("checked", true);
+        $("#gaussian").attr("checked", "checked");
     $("#width").val(universe.dimX.toString());
     $("#height").val(universe.dimY.toString());
     $("#places").val(universe.maxPlaces.toString());
@@ -20,7 +20,7 @@ else if (universe.distribution == "gaussian")
     $("#locationOutlineColor").val(rgb2hex($("circle").css("stroke")));
     $("#linkColor").val(rgb2hex($("line").css('stroke')));
 
-    // Listeners on change
+    // Listeners
     $("#seed").on("change", changeSeed);
     $("#uniform").on("change", changeDistribution);
     $("#gaussian").on("change", changeDistribution);
@@ -39,6 +39,9 @@ else if (universe.distribution == "gaussian")
 
     $("#generate").on("click", universe.refresh);
     $("#seedGenerate").on("click", seedGenerate);
+
+    $(".place").on("mouseenter", tooltipPlaceShow);
+    $(".place").on("mouseleave", tooltipPlaceHide);
 };
 
 var hexDigits = new Array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f");
@@ -140,4 +143,19 @@ function changeLinkColor(event) {
 function seedGenerate(event) {
     setSeed(event);
     universe.refresh();
+}
+
+function tooltipPlaceShow(event) {
+    var target = event.target;
+    var id = target["id"];
+    var name = universe.getPlace(id).name;
+    var tooltip = document.createElement("div");
+    tooltip.innerHTML = name.substr(0, 1).toUpperCase() + name.substr(1);
+    tooltip.setAttribute("class", "tooltip");
+    tooltip.setAttribute("style", "position: absolute; " + "top: " + (event.pageY - 25).toString() + "px; " + "left: " + (event.pageX).toString() + "px;");
+    document.body.appendChild(tooltip);
+}
+
+function tooltipPlaceHide(event) {
+    $(".tooltip").remove();
 }
