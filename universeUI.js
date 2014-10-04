@@ -1,5 +1,83 @@
 ﻿/// <reference path="universe.ts"/>
 /// <reference path="Scripts/jquery/jquery.d.ts"/>
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var UniverseUI = (function (_super) {
+    __extends(UniverseUI, _super);
+    function UniverseUI() {
+        _super.apply(this, arguments);
+    }
+    // *******************************
+    // Draw the world in HTML/SVG
+    UniverseUI.prototype.draw = function () {
+        var radius = 5;
+        var layerPlaces = document.getElementById("layerPlaces");
+        var layerLinks = document.getElementById("layerLinks");
+
+        layerPlaces.setAttribute("width", this.dimX.toString());
+        layerPlaces.setAttribute("height", this.dimY.toString());
+        layerPlaces.innerHTML = "";
+        layerLinks.setAttribute("width", this.dimX.toString());
+        layerLinks.setAttribute("height", this.dimY.toString());
+        layerLinks.innerHTML = "";
+
+        for (var i = 0; i < this.places.length; i++) {
+            var place = this.places[i];
+
+            var cx = Math.round(this.dimX * place.x);
+            var cy = Math.round(this.dimY * place.y);
+
+            // Draw a location
+            var element = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            layerPlaces.appendChild(element);
+            element.setAttribute("class", "place");
+            element.setAttribute("id", place.id);
+            element.setAttribute("cx", cx.toString());
+            element.setAttribute("cy", cy.toString());
+            element.setAttribute("r", radius.toString());
+
+            for (var j = 0; j < place.links.length; j++) {
+                var link = place.links[j];
+
+                // Draw the link only if has not been drawn before
+                var drawnLink = document.getElementById(link.id + place.id);
+                if (!drawnLink) {
+                    var linkX = Math.round(this.dimX * link.x);
+                    var linkY = Math.round(this.dimY * link.y);
+                    var d = distance(new Point(cx, cy), new Point(linkX, linkY));
+
+                    var x1 = cx;
+                    var y1 = cy;
+                    var x2 = linkX;
+                    var y2 = linkY;
+
+                    // Draw a link
+                    var element = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    layerLinks.appendChild(element);
+                    element.setAttribute("class", "link");
+                    element.setAttribute("id", place.id + link.id);
+                    element.setAttribute("x1", x1.toString());
+                    element.setAttribute("y1", y1.toString());
+                    element.setAttribute("x2", x2.toString());
+                    element.setAttribute("y2", y2.toString());
+                }
+            }
+        }
+    };
+
+    // ***********************************
+    // Regenerate the universe and draw it
+    UniverseUI.prototype.refresh = function () {
+        universe.generate();
+        universe.draw();
+    };
+    return UniverseUI;
+})(Universe);
+
 window.onload = function () {
     universe.draw();
 
@@ -159,3 +237,5 @@ function tooltipPlaceShow(event) {
 function tooltipPlaceHide(event) {
     $(".tooltip").remove();
 }
+
+var universe = new UniverseUI(800, 600, 400, 0.050, 0.020, 0.068);
