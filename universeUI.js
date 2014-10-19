@@ -48,7 +48,6 @@ var UniverseUI = (function (_super) {
                 if (!drawnLink) {
                     var linkX = Math.round(this.dimX * link.x);
                     var linkY = Math.round(this.dimY * link.y);
-                    var d = distance(new Point(cx, cy), new Point(linkX, linkY));
 
                     var x1 = cx;
                     var y1 = cy;
@@ -74,6 +73,8 @@ var UniverseUI = (function (_super) {
     UniverseUI.prototype.refresh = function () {
         universe.generate();
         universe.draw();
+        $(".place").on("mouseenter", tooltipPlaceShow);
+        $(".place").on("mouseleave", tooltipPlaceHide);
     };
     return UniverseUI;
 })(Universe);
@@ -83,10 +84,10 @@ window.onload = function () {
 
     // Default value on parameters
     $("#seed").val(universe.seed.toString());
-    if (universe.distribution == "uniform")
-        $("#uniform").attr("checked", "checked");
-else if (universe.distribution == "gaussian")
-        $("#gaussian").attr("checked", "checked");
+    if (universe.distribution == "gaussian")
+        $("#gaussian").prop("checked", true);
+    else
+        $("#uniform").prop("checked", true);
     $("#width").val(universe.dimX.toString());
     $("#height").val(universe.dimY.toString());
     $("#places").val(universe.maxPlaces.toString());
@@ -94,9 +95,9 @@ else if (universe.distribution == "gaussian")
     $("#gap").val((100 * universe.gap).toFixed(2).toString());
     $("#connection").val((100 * universe.connectionLength).toFixed(2).toString());
     $("#backgroundColor").val(rgb2hex($("#layerLinks").css("backgroundColor")));
-    $("#locationFillColor").val(rgb2hex($("circle").css("fill")));
-    $("#locationOutlineColor").val(rgb2hex($("circle").css("stroke")));
-    $("#linkColor").val(rgb2hex($("line").css('stroke')));
+    $("#locationFillColor").val(rgb2hex($(".place").css("fill")));
+    $("#locationOutlineColor").val(rgb2hex($(".place").css("stroke")));
+    $("#linkColor").val(rgb2hex($(".link").css('stroke')));
 
     // Listeners
     $("#seed").on("change", changeSeed);
@@ -162,7 +163,7 @@ function changeDistribution(event) {
 
     if (uniformHTML.checked)
         universe.distribution = "uniform";
-else if (gaussianHTML.checked)
+    else if (gaussianHTML.checked)
         universe.distribution = "gaussian";
 }
 
@@ -207,15 +208,15 @@ function changeBackgroundColor(event) {
 }
 
 function changeLocationFillColor(event) {
-    $("circle").css("fill", "#" + $("#locationFillColor").val());
+    $(".place").css("fill", "#" + $("#locationFillColor").val());
 }
 
 function changeLocationOutlineColor(event) {
-    $("circle").css("stroke", "#" + $("#locationOutlineColor").val());
+    $(".place").css("stroke", "#" + $("#locationOutlineColor").val());
 }
 
 function changeLinkColor(event) {
-    $("line").css("stroke", "#" + $("#linkColor").val());
+    $(".link").css("stroke", "#" + $("#linkColor").val());
 }
 
 function seedGenerate(event) {
@@ -239,3 +240,5 @@ function tooltipPlaceHide(event) {
 }
 
 var universe = new UniverseUI(800, 600, 400, 0.050, 0.020, 0.068);
+//var universe = new UniverseUI(320, 200, 30, 0.050, 0.020, 0.068); // DEBUG
+//# sourceMappingURL=universeUI.js.map

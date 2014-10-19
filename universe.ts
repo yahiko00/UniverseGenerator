@@ -2,10 +2,6 @@
 /// <reference path="Scripts/delaunay/delaunay.d.ts"/>
 /// <reference path="Scripts/namegen/namegen.ts"/>
 
-function distance(p1: Point, p2: Point): number {
-  return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
-} // distance
-
 class Point {
   x: number;
   y: number;
@@ -14,23 +10,40 @@ class Point {
     this.x = x;
     this.y = y;
   } // constructor
-
-  distance(p: Point): number {
-    return distance(this, p);
-  } // distance
 } // Point
 
 class Place extends Point {
   id: string;
   name: string
   links: Place[];
+  isVisited: boolean;
 
   constructor(x: number, y: number, name: string) {
     super(x, y);
     this.id = "place" + ID++;
     this.name = name;
     this.links = [];
+    this.isVisited = false;
   }
+
+  addLink(neighbour: Place) {
+    // Check neighbour is not already linked
+    for (var i = 0; i < this.links.length; i++) {
+      if (this.links[i].id == neighbour.id) {
+        return;
+      }
+    } // for i
+
+    this.links.push(neighbour);
+  } // addLink
+
+  delLink(neighbour: Place) {
+    for (var i = 0; i < this.links.length; i++) {
+      if (this.links[i].id == neighbour.id) {
+        this.links.splice(i, 1);
+      }
+    } // for i
+  } // delLink
 } // Place
 
 class Universe {
@@ -40,7 +53,9 @@ class Universe {
   places: Place[];
   margin: number; // margin in % where no place can appear
   gap: number; // minimal distance between two locations
+  gapSq: number;
   connectionLength: number; // maximal connection length in % (must be > gap)
+  connectionLengthSq: number;
   distribution: string;
   nameGen: NameGenerator;
   seed: number;
@@ -55,11 +70,13 @@ class Universe {
     this.maxPlaces = maxPlaces;
     this.margin = margin;
     this.gap = gap;
+    this.gapSq = gap * gap;
     this.connectionLength = connectionLength;
+    this.connectionLengthSq = connectionLength * connectionLength;
     this.distribution = distribution;
     this.seed = seed;
-    this.rngPlace = new SeededRNG(this.seed, 4, this.distribution == "gaussian" ? 1 : 0); // Xorshift
-    this.rngName = new SeededRNG(this.seed, 4, 0); // Xorshift
+    this.rngPlace = new SeededRNG(this.seed, "xorshift", this.distribution);
+    this.rngName = new SeededRNG(this.seed, "xorshift", "uniform");
     this.nameGen = new NameGeneratorElite(this.rngName);
 
     this.generate();
@@ -68,6 +85,98 @@ class Universe {
   // *************************
   // Generate places and links
   generate() {
+    console.time("Generate");
+    // Initialization of RNGs
+    this.rngPlace.reset(this.seed);
+    this.rngName.reset(this.seed);
+
+    /////////////////////
+    // Creation of places
+    ID = 0;
+    this.places = [];
+    var vertices: number[][] = [];
+    var i = 0;
+    var pos = new Point(0, 0);
+    while (i < this.maxPlaces) {
+      if (this.distribution == "gaussian") {
+        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+      }
+      else { // uniform
+        pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
+        pos.y = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
+      }
+
+      if (this.isValidLocation(pos)) {
+        this.places.push(new Place(pos.x, pos.y, this.nameGen.randName()));
+        vertices.push([pos.x, pos.y]);
+        i++;
+      }
+    } // while
+
+    /////////////////////////
+    // Delaunay Triangulation
+    var triangles = Delaunay.triangulate(vertices);
+
+    for (i = 0; i < triangles.length; i += 3) {
+      var p0 = this.places[triangles[i + 0]];
+      var p1 = this.places[triangles[i + 1]];
+      var p2 = this.places[triangles[i + 2]];
+      p0.addLink(p1);
+      p0.addLink(p2);
+      p1.addLink(p0);
+      p1.addLink(p2);
+      p2.addLink(p0);
+      p2.addLink(p1);
+    } // for i
+
+    //////////////////////////
+    // Conditional Alpha Shape
+    var origin = this.places[0];
+
+    // Process the first place as a special case
+    origin.links.sort((a: Place, b: Place) => { return distanceSq(origin, b) - distanceSq(origin, a) });
+    for (var j = 0; j >= origin.links.length; j++) {
+      var neighbour = origin.links[j];
+      if (distanceSq(origin, neighbour) > this.connectionLengthSq && origin.links.length > 1) {
+        origin.links.splice(j, 1);
+        neighbour.delLink(origin);
+      }
+    } // for j
+
+    // Process the other places
+    for (i = 1; i < this.places.length; i++) {
+      var place = this.places[i];
+
+      place.links.sort((a: Place, b: Place) => { return distanceSq(place, b) - distanceSq(place, a) });
+
+      for (var j = 0; j < place.links.length; j++) {
+        var neighbour = place.links[j];
+
+        if (distanceSq(place, neighbour) <= this.connectionLengthSq) {
+          break;
+        }
+
+        // Backup links
+        var placeLinksOld = place.links.slice(0); // clone
+        var neighbourLinksOld = neighbour.links.slice(0); // clone
+
+        // Delete too long links
+        place.links.splice(j, 1);
+        neighbour.delLink(place);
+
+        // Restore deleted links if connexity is lost
+        if (!this.isPath(place, origin) || !this.isPath(neighbour, origin)) {
+          place.links = placeLinksOld;
+          neighbour.links = neighbourLinksOld
+        }
+      } // for j
+    } // for i
+
+    console.timeEnd("Generate");
+  } // generate
+
+  generateOld() {
     console.time("Generate");
     // Initialization of RNGs
     this.rngPlace.randomSeed = this.seed;
@@ -102,15 +211,29 @@ class Universe {
       var p0 = this.places[triangles[i + 0]];
       var p1 = this.places[triangles[i + 1]];
       var p2 = this.places[triangles[i + 2]];
-      if (p0.distance(p1) < this.connectionLength) p0.links.push(p1);
-      if (p0.distance(p2) < this.connectionLength) p0.links.push(p2);
-      if (p1.distance(p0) < this.connectionLength) p1.links.push(p0);
-      if (p1.distance(p2) < this.connectionLength) p1.links.push(p2);
-      if (p2.distance(p0) < this.connectionLength) p2.links.push(p0);
-      if (p2.distance(p1) < this.connectionLength) p2.links.push(p1);
+      /*if (distanceSq(p0, p1) < this.connectionLengthSq)*/ p0.links.push(p1);
+      /*if (distanceSq(p0, p2) < this.connectionLengthSq)*/ p0.links.push(p2);
+      /*if (distanceSq(p1, p0) < this.connectionLengthSq)*/ p1.links.push(p0);
+      /*if (distanceSq(p1, p2) < this.connectionLengthSq)*/ p1.links.push(p2);
+      /*if (distanceSq(p2, p0) < this.connectionLengthSq)*/ p2.links.push(p0);
+      /*if (distanceSq(p2, p1) < this.connectionLengthSq)*/ p2.links.push(p1);
     } // for i
+
+    // Conditional Alpha Shape
+    for (i = 0; i < this.places.length; i++) {
+      var place = this.places[i];
+
+      place.links.sort((a: Place, b: Place) => { return distanceSq(place, a) - distanceSq(place, b) });
+
+      for (var j = place.links.length - 1; j >= 0; j--) {
+        var neighbour = place.links[j];
+        if (distanceSq(place, neighbour) > this.connectionLengthSq && place.links.length > 1)
+          place.links.pop();
+      } // for j
+    } // for i
+
     console.timeEnd("Generate");
-  } // generate
+  } // generateOld
 
   // ********************************
   // Check the validity of a location
@@ -123,7 +246,7 @@ class Universe {
     for (var i = 0; i < this.places.length; i++) {
       var place = this.places[i];
 
-      if (pos.distance(place) < this.gap) {
+      if (distanceSq(pos, place) < this.gapSq) {
         return false;
       }
     } // for i
@@ -142,6 +265,41 @@ class Universe {
     } // for i
     return null;
   } // getPlace
+
+  // ********************
+  // Check Path existence
+  isPath(start: Place, end: Place): boolean {
+    var visited: Place[] = []; // visited places
+    for (var i = 0; i < this.places.length; i++) {
+      this.places[i].isVisited = false;
+    }
+
+    visited.push(start);
+
+    while (visited.length > 0) {
+      var p = visited.pop();
+      if (!p.isVisited) {
+        p.isVisited = true;
+        for (var i = 0; i < p.links.length; i++) {
+          var neighbour = p.links[i];
+          if (neighbour.id == end.id) {
+            return true;
+          }
+          visited.push(neighbour);
+        } // for i
+      }
+    } // while
+
+    return false;
+  } // isPath
 } // Universe
+
+function distanceSq(p1: Point, p2: Point): number {
+  return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+} // distanceSq
+
+function distance(p1: Point, p2: Point): number {
+  return Math.sqrt(distanceSq(p1, p2));
+} // distance
 
 var ID: number = 0;
