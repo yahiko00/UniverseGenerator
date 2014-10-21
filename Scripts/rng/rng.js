@@ -48,7 +48,7 @@ var SeededRNG = (function () {
         this.reset();
     }
     SeededRNG.prototype.reset = function (randomSeed) {
-        this.randomSeed = randomSeed | this.randomSeedInit;
+        this.randomSeed = randomSeed ? randomSeed : this.randomSeedInit;
 
         // Xorshift initialization
         this.x = 123456789;

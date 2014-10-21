@@ -44,8 +44,9 @@ var UniverseUI = (function (_super) {
                 var link = place.links[j];
 
                 // Draw the link only if has not been drawn before
-                var drawnLink = document.getElementById(link.id + place.id);
-                if (!drawnLink) {
+                var drawnLinkA = document.getElementById(place.id + link.id);
+                var drawnLinkB = document.getElementById(link.id + place.id);
+                if (!drawnLinkA && !drawnLinkB) {
                     var linkX = Math.round(this.dimX * link.x);
                     var linkY = Math.round(this.dimY * link.y);
 
@@ -130,11 +131,16 @@ function hex(x) {
 }
 
 function rgb2hex(rgb) {
-    var match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    if (rgb) {
+        var match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        return hex(match[1]) + hex(match[2]) + hex(match[3]);
+    } else {
+        return hex(0) + hex(0) + hex(0);
+    }
+
     function hex(x) {
         return ("0" + parseInt(x).toString(16)).slice(-2);
     }
-    return hex(match[1]) + hex(match[2]) + hex(match[3]);
 }
 
 function hex2rgb(hex) {
@@ -195,12 +201,14 @@ function changeGap(event) {
     var target = event.target;
     var value = parseFloat(target.value);
     universe.gap = value / 100;
+    universe.gapSq = universe.gap * universe.gap;
 }
 
 function changeConnectionLength(event) {
     var target = event.target;
     var value = parseFloat(target.value);
     universe.connectionLength = value / 100;
+    universe.connectionLengthSq = universe.connectionLength * universe.connectionLength;
 }
 
 function changeBackgroundColor(event) {
@@ -240,5 +248,5 @@ function tooltipPlaceHide(event) {
 }
 
 var universe = new UniverseUI(800, 600, 400, 0.050, 0.020, 0.068);
-//var universe = new UniverseUI(320, 200, 30, 0.050, 0.020, 0.068); // DEBUG
+//var universe = new UniverseUI(320, 200, 10, 0.050, 0.020, 0.068); // DEBUG
 //# sourceMappingURL=universeUI.js.map

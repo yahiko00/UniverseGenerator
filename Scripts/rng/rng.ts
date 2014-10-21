@@ -67,7 +67,7 @@ class SeededRNG {
   } // constructor
 
   reset(randomSeed?: number) {
-    this.randomSeed = randomSeed | this.randomSeedInit;
+    this.randomSeed = randomSeed ? randomSeed : this.randomSeedInit;
 
     // Xorshift initialization
     this.x = 123456789;

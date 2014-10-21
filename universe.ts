@@ -13,6 +13,7 @@ class Point {
 } // Point
 
 class Place extends Point {
+  static ID: number = 0;
   id: string;
   name: string
   links: Place[];
@@ -20,7 +21,7 @@ class Place extends Point {
 
   constructor(x: number, y: number, name: string) {
     super(x, y);
-    this.id = "place" + ID++;
+    this.id = "place" + Place.ID++;
     this.name = name;
     this.links = [];
     this.isVisited = false;
@@ -35,12 +36,15 @@ class Place extends Point {
     } // for i
 
     this.links.push(neighbour);
+    neighbour.links.push(this);
   } // addLink
 
   delLink(neighbour: Place) {
     for (var i = 0; i < this.links.length; i++) {
       if (this.links[i].id == neighbour.id) {
         this.links.splice(i, 1);
+        neighbour.delLink(this);
+        return;
       }
     } // for i
   } // delLink
@@ -92,7 +96,7 @@ class Universe {
 
     /////////////////////
     // Creation of places
-    ID = 0;
+    Place.ID = 0;
     this.places = [];
     var vertices: number[][] = [];
     var i = 0;
@@ -124,10 +128,7 @@ class Universe {
       var p2 = this.places[triangles[i + 2]];
       p0.addLink(p1);
       p0.addLink(p2);
-      p1.addLink(p0);
       p1.addLink(p2);
-      p2.addLink(p0);
-      p2.addLink(p1);
     } // for i
 
     //////////////////////////
@@ -140,7 +141,7 @@ class Universe {
       var neighbour = origin.links[j];
       if (distanceSq(origin, neighbour) > this.connectionLengthSq && origin.links.length > 1) {
         origin.links.splice(j, 1);
-        neighbour.delLink(origin);
+        j--;
       }
     } // for j
 
@@ -153,23 +154,23 @@ class Universe {
       for (var j = 0; j < place.links.length; j++) {
         var neighbour = place.links[j];
 
-        if (distanceSq(place, neighbour) <= this.connectionLengthSq) {
-          break;
+        if (distanceSq(place, neighbour) > this.connectionLengthSq) {
+          // Backup links
+          var placeLinksOld = place.links.slice(0); // clone
+          var neighbourLinksOld = neighbour.links.slice(0); // clone
+
+          // Delete too long links
+          place.delLink(neighbour);
+          j--;
+
+          // Restore deleted links if connexity is lost
+          if (!this.isPath(place, origin) || !this.isPath(neighbour, origin)) {
+            place.links = placeLinksOld;
+            neighbour.links = neighbourLinksOld
+            j++;
+          }
         }
 
-        // Backup links
-        var placeLinksOld = place.links.slice(0); // clone
-        var neighbourLinksOld = neighbour.links.slice(0); // clone
-
-        // Delete too long links
-        place.links.splice(j, 1);
-        neighbour.delLink(place);
-
-        // Restore deleted links if connexity is lost
-        if (!this.isPath(place, origin) || !this.isPath(neighbour, origin)) {
-          place.links = placeLinksOld;
-          neighbour.links = neighbourLinksOld
-        }
       } // for j
     } // for i
 
@@ -177,24 +178,25 @@ class Universe {
   } // generate
 
   generateOld() {
-    console.time("Generate");
+    console.time("GenerateOld1");
     // Initialization of RNGs
-    this.rngPlace.randomSeed = this.seed;
-    this.rngName.randomSeed = this.seed;
+    this.rngPlace.reset(this.seed);
+    this.rngName.reset(this.seed);
 
     // Creation of places
+    Place.ID = 0;
     this.places = [];
     var vertices: number[][] = [];
     var i = 0;
     var pos = new Point(0, 0);
     while (i < this.maxPlaces) {
-      if (this.distribution == "uniform") {
+      if (this.distribution == "gaussian") {
+        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+      }
+      else { // uniform
         pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
         pos.y = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
-      }
-      else {
-        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
-        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
       }
 
       if (this.isValidLocation(pos)) {
@@ -211,29 +213,77 @@ class Universe {
       var p0 = this.places[triangles[i + 0]];
       var p1 = this.places[triangles[i + 1]];
       var p2 = this.places[triangles[i + 2]];
-      /*if (distanceSq(p0, p1) < this.connectionLengthSq)*/ p0.links.push(p1);
-      /*if (distanceSq(p0, p2) < this.connectionLengthSq)*/ p0.links.push(p2);
-      /*if (distanceSq(p1, p0) < this.connectionLengthSq)*/ p1.links.push(p0);
-      /*if (distanceSq(p1, p2) < this.connectionLengthSq)*/ p1.links.push(p2);
-      /*if (distanceSq(p2, p0) < this.connectionLengthSq)*/ p2.links.push(p0);
-      /*if (distanceSq(p2, p1) < this.connectionLengthSq)*/ p2.links.push(p1);
+      p0.addLink(p1);
+      p0.addLink(p2);
+      p1.addLink(p2);
     } // for i
 
     // Conditional Alpha Shape
     for (i = 0; i < this.places.length; i++) {
       var place = this.places[i];
 
-      place.links.sort((a: Place, b: Place) => { return distanceSq(place, a) - distanceSq(place, b) });
+      //place.links.sort((a: Place, b: Place) => { return distanceSq(place, b) - distanceSq(place, a) });
 
-      for (var j = place.links.length - 1; j >= 0; j--) {
+      for (var j = 0; j < place.links.length; j++) {
         var neighbour = place.links[j];
-        if (distanceSq(place, neighbour) > this.connectionLengthSq && place.links.length > 1)
-          place.links.pop();
+
+        if (distanceSq(place, neighbour) > this.connectionLengthSq &&
+            place.links.length > 1 && neighbour.links.length > 1) {
+          place.delLink(neighbour);
+          j--;
+        }
       } // for j
     } // for i
 
-    console.timeEnd("Generate");
-  } // generateOld
+    console.timeEnd("GenerateOld1");
+  } // generateOld1
+
+  generateOld2() {
+    console.time("GenerateOld2");
+    // Initialization of RNGs
+    this.rngPlace.reset(this.seed);
+    this.rngName.reset(this.seed);
+
+    // Creation of places
+    Place.ID = 0;
+    this.places = [];
+    var vertices: number[][] = [];
+    var i = 0;
+    var pos = new Point(0, 0);
+    while (i < this.maxPlaces) {
+      if (this.distribution == "gaussian") {
+        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+      }
+      else { // uniform
+        pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
+        pos.y = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
+      }
+
+      if (this.isValidLocation(pos)) {
+        this.places.push(new Place(pos.x, pos.y, this.nameGen.randName()));
+        vertices.push([pos.x, pos.y]);
+        i++;
+      }
+    } // while
+
+    // Delaunay Triangulation
+    var triangles = Delaunay.triangulate(vertices);
+
+    for (i = 0; i < triangles.length; i += 3) {
+      var p0 = this.places[triangles[i + 0]];
+      var p1 = this.places[triangles[i + 1]];
+      var p2 = this.places[triangles[i + 2]];
+      if (distanceSq(p0, p1) < this.connectionLengthSq) p0.links.push(p1);
+      if (distanceSq(p0, p2) < this.connectionLengthSq) p0.links.push(p2);
+      if (distanceSq(p1, p0) < this.connectionLengthSq) p1.links.push(p0);
+      if (distanceSq(p1, p2) < this.connectionLengthSq) p1.links.push(p2);
+      if (distanceSq(p2, p0) < this.connectionLengthSq) p2.links.push(p0);
+      if (distanceSq(p2, p1) < this.connectionLengthSq) p2.links.push(p1);
+    } // for i
+
+    console.timeEnd("GenerateOld2");
+  } // generateOld2
 
   // ********************************
   // Check the validity of a location
@@ -301,5 +351,3 @@ function distanceSq(p1: Point, p2: Point): number {
 function distance(p1: Point, p2: Point): number {
   return Math.sqrt(distanceSq(p1, p2));
 } // distance
-
-var ID: number = 0;
