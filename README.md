@@ -1,5 +1,5 @@
-Javascript-Universe-Generator
-=============================
+Universe Generator
+==================
 
 Random Generation of Universes
 
