@@ -228,7 +228,7 @@ class Universe {
         var neighbour = place.links[j];
 
         if (distanceSq(place, neighbour) > this.connectionLengthSq &&
-            place.links.length > 1 && neighbour.links.length > 1) {
+          place.links.length > 1 && neighbour.links.length > 1) {
           place.delLink(neighbour);
           j--;
         }
@@ -351,3 +351,21 @@ function distanceSq(p1: Point, p2: Point): number {
 function distance(p1: Point, p2: Point): number {
   return Math.sqrt(distanceSq(p1, p2));
 } // distance
+
+function distanceCylinderSq(p1: Point, p2: Point, lrBound: Point): number {
+  var nwDistanceSq = distanceSq(p1, p2); // non-wrap distance²
+  var wDistanceSq: number; // wrap distance²
+  var wDistanceXSq: number;
+  if (p1.x <= p2.x) {
+    wDistanceXSq = (p1.x - p2.x + lrBound.x) * (p1.x - p2.x + lrBound.x);
+  }
+  else {
+    wDistanceXSq = (p2.x - p1.x + lrBound.x) * (p2.x - p1.x + lrBound.x);
+  }
+  var wDistanceSq = wDistanceXSq + (p1.y - p2.y) * (p1.y - p2.y);
+  return Math.min(nwDistanceSq, wDistanceSq);
+} // distanceCylinderSq
+
+function distanceCylinder(p1: Point, p2: Point, lrBound: Point): number {
+  return Math.sqrt(distanceCylinderSq(p1, p2, lrBound));
+} // distanceCylinder
