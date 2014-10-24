@@ -2,7 +2,7 @@
 /// <reference path="Scripts/jquery/jquery.d.ts"/>
 
 class UniverseUI extends Universe {
-  // *******************************
+  // **************************
   // Draw the world in HTML/SVG
   draw() {
     var radius = 5;

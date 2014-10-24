@@ -91,13 +91,13 @@ class Universe {
   reset() {
     switch (this.topologyType) {
       case "plane":
-        this.topology = new TopologyPlane;
+        this.topology = new TopologyPlane(this.dimX, this.dimY);
         break;
       case "cylinder":
-        this.topology = new TopologyCylinder;
+        this.topology = new TopologyCylinder(this.dimX, this.dimY);
         break;
       default:
-        this.topology = new TopologyPlane;
+        this.topology = new TopologyPlane(this.dimX, this.dimY);
     } // switch
 
     this.rngPlace = new SeededRNG(this.seed, "xorshift", this.distribution);
@@ -370,6 +370,11 @@ class TopologyPlane implements Topology {
   dimX: number;
   dimY: number;
 
+  constructor(dimX: number, dimY: number) {
+    this.dimX = dimX;
+    this.dimY = dimY;
+  } // constructor
+
   distanceSq(p1: Point, p2: Point): number {
     return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
   } // distanceSq
@@ -387,6 +392,11 @@ class TopologyPlane implements Topology {
 class TopologyCylinder implements Topology {
   dimX: number;
   dimY: number;
+
+  constructor(dimX: number, dimY: number) {
+    this.dimX = dimX;
+    this.dimY = dimY;
+  } // constructor
 
   distanceSq(p1: Point, p2: Point): number {
     var nwDistanceSq = distanceSq(p1, p2); // non-wrap distance²
