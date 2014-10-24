@@ -75,8 +75,10 @@ window.onload = () => {
 
   // Default value on parameters
   $("#seed").val(universe.seed.toString());
-  if (universe.distribution == "gaussian") $("#gaussian").prop("checked", true);
-  else $("#uniform").prop("checked", true);
+  if (universe.topologyType == "cylinder") $("#topoCylinder").prop("checked", true);
+  else $("#topoPlane").prop("checked", true);
+  if (universe.distribution == "gaussian") $("#distGaussian").prop("checked", true);
+  else $("#distUniform").prop("checked", true);
   $("#width").val(universe.dimX.toString());
   $("#height").val(universe.dimY.toString());
   $("#places").val(universe.maxPlaces.toString());
@@ -90,8 +92,8 @@ window.onload = () => {
 
   // Listeners
   $("#seed").on("change", changeSeed);
-  $("#uniform").on("change", changeDistribution);
-  $("#gaussian").on("change", changeDistribution);
+  $("#distUniform").on("change", changeDistribution);
+  $("#distGaussian").on("change", changeDistribution);
 
   $("#seedTime").on("click", setSeed);
   $("#width").on("change", changeDimX);
@@ -105,7 +107,7 @@ window.onload = () => {
   $("#locationOutlineColor").on("change", changeLocationOutlineColor);
   $("#linkColor").on("change", changeLinkColor);
 
-  $("#generate").on("click", universe.refresh);
+  $("#generate").on("click", generate);
   $("#seedGenerate").on("click", seedGenerate);
 
   $(".place").on("mouseenter", tooltipPlaceShow);
@@ -196,8 +198,8 @@ function setSeed(event: BaseJQueryEventObject) {
 }
 
 function changeDistribution(event: BaseJQueryEventObject) {
-  var uniformHTML = <HTMLInputElement>document.getElementById("uniform");
-  var gaussianHTML = <HTMLInputElement>document.getElementById("gaussian");
+  var uniformHTML = <HTMLInputElement>document.getElementById("distUniform");
+  var gaussianHTML = <HTMLInputElement>document.getElementById("distGaussian");
 
   if (uniformHTML.checked) universe.distribution = "uniform";
   else if (gaussianHTML.checked) universe.distribution = "gaussian";
@@ -257,9 +259,15 @@ function changeLinkColor(event: BaseJQueryEventObject) {
   $(".link").css("stroke", "#" + $("#linkColor").val());
 }
 
+function generate(event: BaseJQueryEventObject) {
+  $(".place").remove();
+  $(".link").remove();
+  universe.refresh();
+}
+
 function seedGenerate(event: BaseJQueryEventObject) {
   setSeed(event);
-  universe.refresh();
+  generate(event);
 }
 
 function tooltipPlaceShow(event: BaseJQueryEventObject) {
@@ -279,5 +287,6 @@ function tooltipPlaceHide(event: BaseJQueryEventObject) {
   $(".tooltip").remove();
 }
 
-var universe = new UniverseUI(800, 600, 400, 0.050, 0.020, 0.068);
+var universe = new UniverseUI(800, 600, 400, 0.000, 0.020, 1.0);
+//var universe = new UniverseUI(800, 600, 400, 0.050, 0.020, 0.068);
 //var universe = new UniverseUI(320, 200, 10, 0.050, 0.020, 0.068); // DEBUG

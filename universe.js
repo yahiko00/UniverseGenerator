@@ -45,7 +45,8 @@ var Place = (function (_super) {
     return Place;
 })(Point); // Place
 var Universe = (function () {
-    function Universe(dimX, dimY, maxPlaces, margin, gap, connectionLength, distribution, seed) {
+    function Universe(dimX, dimY, maxPlaces, margin, gap, connectionLength, topologyType, distribution, seed) {
+        if (topologyType === void 0) { topologyType = "plane"; }
         if (distribution === void 0) { distribution = "uniform"; }
         if (seed === void 0) { seed = Date.now(); }
         this.dimX = dimX;
@@ -56,20 +57,33 @@ var Universe = (function () {
         this.gapSq = gap * gap;
         this.connectionLength = connectionLength;
         this.connectionLengthSq = connectionLength * connectionLength;
+        this.topologyType = topologyType;
         this.distribution = distribution;
         this.seed = seed;
+        this.generate();
+    }
+    // ***********************
+    // Reset topology and RNGs
+    Universe.prototype.reset = function () {
+        switch (this.topologyType) {
+            case "plane":
+                this.topology = new TopologyPlane;
+                break;
+            case "cylinder":
+                this.topology = new TopologyCylinder;
+                break;
+            default:
+                this.topology = new TopologyPlane;
+        }
         this.rngPlace = new SeededRNG(this.seed, "xorshift", this.distribution);
         this.rngName = new SeededRNG(this.seed, "xorshift", "uniform");
         this.nameGen = new NameGeneratorElite(this.rngName);
-        this.generate();
-    }
+    }; // reset
     // *************************
     // Generate places and links
     Universe.prototype.generate = function () {
         console.time("Generate");
-        // Initialization of RNGs
-        this.rngPlace.reset(this.seed);
-        this.rngName.reset(this.seed);
+        this.reset();
         /////////////////////
         // Creation of places
         Place.ID = 0;
@@ -79,8 +93,8 @@ var Universe = (function () {
         var pos = new Point(0, 0);
         while (i < this.maxPlaces) {
             if (this.distribution == "gaussian") {
-                pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
-                pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+                pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
+                pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
             }
             else {
                 pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
@@ -144,9 +158,7 @@ var Universe = (function () {
     }; // generate
     Universe.prototype.generateOld = function () {
         console.time("GenerateOld1");
-        // Initialization of RNGs
-        this.rngPlace.reset(this.seed);
-        this.rngName.reset(this.seed);
+        this.reset();
         // Creation of places
         Place.ID = 0;
         this.places = [];
@@ -155,8 +167,8 @@ var Universe = (function () {
         var pos = new Point(0, 0);
         while (i < this.maxPlaces) {
             if (this.distribution == "gaussian") {
-                pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
-                pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+                pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
+                pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
             }
             else {
                 pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
@@ -192,9 +204,7 @@ var Universe = (function () {
     }; // generateOld1
     Universe.prototype.generateOld2 = function () {
         console.time("GenerateOld2");
-        // Initialization of RNGs
-        this.rngPlace.reset(this.seed);
-        this.rngName.reset(this.seed);
+        this.reset();
         // Creation of places
         Place.ID = 0;
         this.places = [];
@@ -203,8 +213,8 @@ var Universe = (function () {
         var pos = new Point(0, 0);
         while (i < this.maxPlaces) {
             if (this.distribution == "gaussian") {
-                pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
-                pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+                pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
+                pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
             }
             else {
                 pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
@@ -287,6 +297,47 @@ var Universe = (function () {
     }; // isPath
     return Universe;
 })(); // Universe
+var TopologyPlane = (function () {
+    function TopologyPlane() {
+    }
+    TopologyPlane.prototype.distanceSq = function (p1, p2) {
+        return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+    }; // distanceSq
+    TopologyPlane.prototype.distance = function (p1, p2) {
+        return Math.sqrt(this.distanceSq(p1, p2));
+    }; // distance
+    TopologyPlane.prototype.normalize = function (p) {
+        var normPoint = new Point(p.x, p.y);
+        return normPoint;
+    }; // normalize
+    return TopologyPlane;
+})(); // TopologyPlane
+var TopologyCylinder = (function () {
+    function TopologyCylinder() {
+    }
+    TopologyCylinder.prototype.distanceSq = function (p1, p2) {
+        var nwDistanceSq = distanceSq(p1, p2); // non-wrap distance²
+        var wDistanceSq; // wrap distance²
+        var wDistanceXSq;
+        if (p1.x <= p2.x) {
+            wDistanceXSq = (p1.x - p2.x + this.dimX) * (p1.x - p2.x + this.dimX);
+        }
+        else {
+            wDistanceXSq = (p2.x - p1.x + this.dimX) * (p2.x - p1.x + this.dimX);
+        }
+        var wDistanceSq = wDistanceXSq + (p1.y - p2.y) * (p1.y - p2.y);
+        return Math.min(nwDistanceSq, wDistanceSq);
+    }; // distanceCylinderSq
+    TopologyCylinder.prototype.distance = function (p1, p2) {
+        return Math.sqrt(this.distanceSq(p1, p2));
+    }; // distanceCylinder
+    TopologyCylinder.prototype.normalize = function (p) {
+        var normPoint = new Point(p.x % this.dimX, p.y % this.dimY);
+        return normPoint;
+    }; // normalize
+    return TopologyCylinder;
+})(); // TopologyCylinder
+// ***********************************************
 function distanceSq(p1, p2) {
     return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
 } // distanceSq

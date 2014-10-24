@@ -74,10 +74,14 @@ window.onload = function () {
     universe.draw();
     // Default value on parameters
     $("#seed").val(universe.seed.toString());
-    if (universe.distribution == "gaussian")
-        $("#gaussian").prop("checked", true);
+    if (universe.topologyType == "cylinder")
+        $("#topoCylinder").prop("checked", true);
     else
-        $("#uniform").prop("checked", true);
+        $("#topoPlane").prop("checked", true);
+    if (universe.distribution == "gaussian")
+        $("#distGaussian").prop("checked", true);
+    else
+        $("#distUniform").prop("checked", true);
     $("#width").val(universe.dimX.toString());
     $("#height").val(universe.dimY.toString());
     $("#places").val(universe.maxPlaces.toString());
@@ -90,8 +94,8 @@ window.onload = function () {
     $("#linkColor").val(rgb2hex($(".link").css('stroke')));
     // Listeners
     $("#seed").on("change", changeSeed);
-    $("#uniform").on("change", changeDistribution);
-    $("#gaussian").on("change", changeDistribution);
+    $("#distUniform").on("change", changeDistribution);
+    $("#distGaussian").on("change", changeDistribution);
     $("#seedTime").on("click", setSeed);
     $("#width").on("change", changeDimX);
     $("#height").on("change", changeDimY);
@@ -103,7 +107,7 @@ window.onload = function () {
     $("#locationFillColor").on("change", changeLocationFillColor);
     $("#locationOutlineColor").on("change", changeLocationOutlineColor);
     $("#linkColor").on("change", changeLinkColor);
-    $("#generate").on("click", universe.refresh);
+    $("#generate").on("click", generate);
     $("#seedGenerate").on("click", seedGenerate);
     $(".place").on("mouseenter", tooltipPlaceShow);
     $(".place").on("mouseleave", tooltipPlaceHide);
@@ -295,8 +299,8 @@ function setSeed(event) {
     changeSeed(event);
 }
 function changeDistribution(event) {
-    var uniformHTML = document.getElementById("uniform");
-    var gaussianHTML = document.getElementById("gaussian");
+    var uniformHTML = document.getElementById("distUniform");
+    var gaussianHTML = document.getElementById("distGaussian");
     if (uniformHTML.checked)
         universe.distribution = "uniform";
     else if (gaussianHTML.checked)
@@ -346,9 +350,14 @@ function changeLocationOutlineColor(event) {
 function changeLinkColor(event) {
     $(".link").css("stroke", "#" + $("#linkColor").val());
 }
+function generate(event) {
+    $(".place").remove();
+    $(".link").remove();
+    universe.refresh();
+}
 function seedGenerate(event) {
     setSeed(event);
-    universe.refresh();
+    generate(event);
 }
 function tooltipPlaceShow(event) {
     var target = event.target;
@@ -363,5 +372,5 @@ function tooltipPlaceShow(event) {
 function tooltipPlaceHide(event) {
     $(".tooltip").remove();
 }
-var universe = new UniverseUI(800, 600, 400, 0.050, 0.020, 0.068);
+var universe = new UniverseUI(800, 600, 400, 0.000, 0.020, 1.0);
 //# sourceMappingURL=universeUI.js.map

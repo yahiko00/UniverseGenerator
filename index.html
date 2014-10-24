@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Universe Generator</title>
-  <link rel="stylesheet" href="universe.css" type="text/css" />
+  <link rel="stylesheet" href="universeUI.css" type="text/css" />
   <script src="Scripts/rng/rng.js"></script>
   <script src="Scripts/delaunay/delaunay.js"></script>
   <script src="Scripts/namegen/namegen.js"></script>
@@ -21,9 +21,12 @@
   <div id="parameters">
     <h3>Parameters</h3>
     <span>Seed : </span><input type="text" id="seed" /><input type="button" id="seedTime" value="Time" /><br />
+    <span>Topology: </span>
+      <input type="radio" name="topology" id="topoPlane" /><span>Plane  </span>
+      <input type="radio" name="topology" id="topoCylinder" /><span>Cylinder</span><br />
     <span>Distribution : </span>
-      <input type="radio" name="distribution" id="uniform" /><span>Uniform  </span>
-      <input type="radio" name="distribution" id="gaussian" /><span>Gaussian</span><br />
+      <input type="radio" name="distribution" id="distUniform" /><span>Uniform  </span>
+      <input type="radio" name="distribution" id="distGaussian" /><span>Gaussian</span><br />
     <span>Width (px) : </span><input type="text" id="width" size="10" /><br />
     <span>Height (px) : </span><input type="text" id="height" size="10" /><br />
     <span># Locations : </span><input type="text" id="places" size="10" /><br />

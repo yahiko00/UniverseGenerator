@@ -60,6 +60,8 @@ class Universe {
   gapSq: number;
   connectionLength: number; // maximal connection length in % (must be > gap)
   connectionLengthSq: number;
+  topologyType: string;
+  topology: Topology;
   distribution: string;
   nameGen: NameGenerator;
   seed: number;
@@ -68,7 +70,7 @@ class Universe {
   rngName: SeededRNG;
 
   constructor(dimX: number, dimY: number, maxPlaces: number,
-    margin: number, gap: number, connectionLength: number, distribution: string = "uniform", seed: number = Date.now()) {
+    margin: number, gap: number, connectionLength: number, topologyType: string = "plane", distribution: string = "uniform", seed: number = Date.now()) {
     this.dimX = dimX;
     this.dimY = dimY;
     this.maxPlaces = maxPlaces;
@@ -77,22 +79,37 @@ class Universe {
     this.gapSq = gap * gap;
     this.connectionLength = connectionLength;
     this.connectionLengthSq = connectionLength * connectionLength;
+    this.topologyType = topologyType;
     this.distribution = distribution;
     this.seed = seed;
-    this.rngPlace = new SeededRNG(this.seed, "xorshift", this.distribution);
-    this.rngName = new SeededRNG(this.seed, "xorshift", "uniform");
-    this.nameGen = new NameGeneratorElite(this.rngName);
 
     this.generate();
   }
+
+  // ***********************
+  // Reset topology and RNGs
+  reset() {
+    switch (this.topologyType) {
+      case "plane":
+        this.topology = new TopologyPlane;
+        break;
+      case "cylinder":
+        this.topology = new TopologyCylinder;
+        break;
+      default:
+        this.topology = new TopologyPlane;
+    } // switch
+
+    this.rngPlace = new SeededRNG(this.seed, "xorshift", this.distribution);
+    this.rngName = new SeededRNG(this.seed, "xorshift", "uniform");
+    this.nameGen = new NameGeneratorElite(this.rngName);
+  } // reset
 
   // *************************
   // Generate places and links
   generate() {
     console.time("Generate");
-    // Initialization of RNGs
-    this.rngPlace.reset(this.seed);
-    this.rngName.reset(this.seed);
+    this.reset();
 
     /////////////////////
     // Creation of places
@@ -103,8 +120,8 @@ class Universe {
     var pos = new Point(0, 0);
     while (i < this.maxPlaces) {
       if (this.distribution == "gaussian") {
-        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
-        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
+        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
       }
       else { // uniform
         pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
@@ -179,9 +196,7 @@ class Universe {
 
   generateOld() {
     console.time("GenerateOld1");
-    // Initialization of RNGs
-    this.rngPlace.reset(this.seed);
-    this.rngName.reset(this.seed);
+    this.reset();
 
     // Creation of places
     Place.ID = 0;
@@ -191,8 +206,8 @@ class Universe {
     var pos = new Point(0, 0);
     while (i < this.maxPlaces) {
       if (this.distribution == "gaussian") {
-        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
-        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
+        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
       }
       else { // uniform
         pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
@@ -240,9 +255,7 @@ class Universe {
 
   generateOld2() {
     console.time("GenerateOld2");
-    // Initialization of RNGs
-    this.rngPlace.reset(this.seed);
-    this.rngName.reset(this.seed);
+    this.reset();
 
     // Creation of places
     Place.ID = 0;
@@ -252,8 +265,8 @@ class Universe {
     var pos = new Point(0, 0);
     while (i < this.maxPlaces) {
       if (this.distribution == "gaussian") {
-        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
-        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.randNorm() / 3;
+        pos.x = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
+        pos.y = 0.5 + (0.5 - this.margin) * this.rngPlace.rand() / 3;
       }
       else { // uniform
         pos.x = this.margin + (1 - 2 * this.margin) * this.rngPlace.rand();
@@ -343,6 +356,63 @@ class Universe {
     return false;
   } // isPath
 } // Universe
+
+interface Topology {
+  dimX: number;
+  dimY: number;
+
+  distanceSq(p1: Point, p2: Point): number;
+  distance(p1: Point, p2: Point): number;
+  normalize(p: Point): Point;
+} // Topology
+
+class TopologyPlane implements Topology {
+  dimX: number;
+  dimY: number;
+
+  distanceSq(p1: Point, p2: Point): number {
+    return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+  } // distanceSq
+
+  distance(p1: Point, p2: Point): number {
+    return Math.sqrt(this.distanceSq(p1, p2));
+  } // distance
+
+  normalize(p: Point): Point {
+    var normPoint = new Point(p.x, p.y);
+    return normPoint;
+  } // normalize
+} // TopologyPlane
+
+class TopologyCylinder implements Topology {
+  dimX: number;
+  dimY: number;
+
+  distanceSq(p1: Point, p2: Point): number {
+    var nwDistanceSq = distanceSq(p1, p2); // non-wrap distance²
+    var wDistanceSq: number; // wrap distance²
+    var wDistanceXSq: number;
+    if (p1.x <= p2.x) {
+      wDistanceXSq = (p1.x - p2.x + this.dimX) * (p1.x - p2.x + this.dimX);
+    }
+    else {
+      wDistanceXSq = (p2.x - p1.x + this.dimX) * (p2.x - p1.x + this.dimX);
+    }
+    var wDistanceSq = wDistanceXSq + (p1.y - p2.y) * (p1.y - p2.y);
+    return Math.min(nwDistanceSq, wDistanceSq);
+  } // distanceCylinderSq
+
+  distance(p1: Point, p2: Point): number {
+    return Math.sqrt(this.distanceSq(p1, p2));
+  } // distanceCylinder
+
+  normalize(p: Point): Point {
+    var normPoint = new Point(p.x % this.dimX, p.y % this.dimY);
+    return normPoint;
+  } // normalize
+} // TopologyCylinder
+
+// ***********************************************
 
 function distanceSq(p1: Point, p2: Point): number {
   return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
