@@ -92,6 +92,8 @@ window.onload = () => {
 
   // Listeners
   $("#seed").on("change", changeSeed);
+  $("#topoPlane").on("change", changeTopology);
+  $("#topoCylinder").on("change", changeTopology);
   $("#distUniform").on("change", changeDistribution);
   $("#distGaussian").on("change", changeDistribution);
 
@@ -195,6 +197,14 @@ function setSeed(event: BaseJQueryEventObject) {
   seedHTML.value = Date.now().toString();
   event.target = seedHTML;
   changeSeed(event);
+}
+
+function changeTopology(event: BaseJQueryEventObject) {
+  var planeHTML = <HTMLInputElement>document.getElementById("topoPlane");
+  var cylinderHTML = <HTMLInputElement>document.getElementById("topoCylinder");
+
+  if (planeHTML.checked) universe.topologyType = "plane";
+  else if (cylinderHTML.checked) universe.topologyType = "cylinder";
 }
 
 function changeDistribution(event: BaseJQueryEventObject) {

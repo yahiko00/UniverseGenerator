@@ -94,6 +94,8 @@ window.onload = function () {
     $("#linkColor").val(rgb2hex($(".link").css('stroke')));
     // Listeners
     $("#seed").on("change", changeSeed);
+    $("#topoPlane").on("change", changeTopology);
+    $("#topoCylinder").on("change", changeTopology);
     $("#distUniform").on("change", changeDistribution);
     $("#distGaussian").on("change", changeDistribution);
     $("#seedTime").on("click", setSeed);
@@ -297,6 +299,14 @@ function setSeed(event) {
     seedHTML.value = Date.now().toString();
     event.target = seedHTML;
     changeSeed(event);
+}
+function changeTopology(event) {
+    var planeHTML = document.getElementById("topoPlane");
+    var cylinderHTML = document.getElementById("topoCylinder");
+    if (planeHTML.checked)
+        universe.topologyType = "plane";
+    else if (cylinderHTML.checked)
+        universe.topologyType = "cylinder";
 }
 function changeDistribution(event) {
     var uniformHTML = document.getElementById("distUniform");
