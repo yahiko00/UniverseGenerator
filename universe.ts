@@ -135,6 +135,19 @@ class Universe {
       }
     } // while
 
+    // DEBUG
+    /*
+    var minDist = Number.POSITIVE_INFINITY;
+    for (var i = 0; i < this.places.length; i++) {
+      var place1 = this.places[i];
+      for (var j = i + 1; j < this.places.length; j++) {
+        var place2 = this.places[j];
+        minDist = Math.min(minDist, this.topology.distance(place1, place2));
+      }
+    }
+    console.log("minDist = " + minDist.toString());
+    */
+
     /////////////////////////
     // Delaunay Triangulation
     var triangles = Delaunay.triangulate(vertices);
@@ -399,8 +412,7 @@ class TopologyCylinder implements Topology {
   } // constructor
 
   distanceSq(p1: Point, p2: Point): number {
-    var nwDistanceSq = this.distanceSq(p1, p2); // non-wrap distance²
-    var wDistanceSq: number; // wrap distance²
+    var nwDistanceSq = (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y); // non-wrap distance^2
     var wDistanceXSq: number;
     if (p1.x <= p2.x) {
       wDistanceXSq = (p1.x - p2.x + this.dimX) * (p1.x - p2.x + this.dimX);
@@ -408,7 +420,7 @@ class TopologyCylinder implements Topology {
     else {
       wDistanceXSq = (p2.x - p1.x + this.dimX) * (p2.x - p1.x + this.dimX);
     }
-    var wDistanceSq = wDistanceXSq + (p1.y - p2.y) * (p1.y - p2.y);
+    var wDistanceSq = wDistanceXSq + (p1.y - p2.y) * (p1.y - p2.y); // wrap distance^2
     return Math.min(nwDistanceSq, wDistanceSq);
   } // distanceCylinderSq
 
