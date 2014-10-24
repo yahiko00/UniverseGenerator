@@ -153,10 +153,10 @@ class Universe {
     var origin = this.places[0];
 
     // Process the first place as a special case
-    origin.links.sort((a: Place, b: Place) => { return distanceSq(origin, b) - distanceSq(origin, a) });
+    origin.links.sort((a: Place, b: Place) => { return this.topology.distanceSq(origin, b) - this.topology.distanceSq(origin, a) });
     for (var j = 0; j >= origin.links.length; j++) {
       var neighbour = origin.links[j];
-      if (distanceSq(origin, neighbour) > this.connectionLengthSq && origin.links.length > 1) {
+      if (this.topology.distanceSq(origin, neighbour) > this.connectionLengthSq && origin.links.length > 1) {
         origin.links.splice(j, 1);
         j--;
       }
@@ -166,12 +166,12 @@ class Universe {
     for (i = 1; i < this.places.length; i++) {
       var place = this.places[i];
 
-      place.links.sort((a: Place, b: Place) => { return distanceSq(place, b) - distanceSq(place, a) });
+      place.links.sort((a: Place, b: Place) => { return this.topology.distanceSq(place, b) - this.topology.distanceSq(place, a) });
 
       for (var j = 0; j < place.links.length; j++) {
         var neighbour = place.links[j];
 
-        if (distanceSq(place, neighbour) > this.connectionLengthSq) {
+        if (this.topology.distanceSq(place, neighbour) > this.connectionLengthSq) {
           // Backup links
           var placeLinksOld = place.links.slice(0); // clone
           var neighbourLinksOld = neighbour.links.slice(0); // clone
@@ -242,7 +242,7 @@ class Universe {
       for (var j = 0; j < place.links.length; j++) {
         var neighbour = place.links[j];
 
-        if (distanceSq(place, neighbour) > this.connectionLengthSq &&
+        if (this.topology.distanceSq(place, neighbour) > this.connectionLengthSq &&
           place.links.length > 1 && neighbour.links.length > 1) {
           place.delLink(neighbour);
           j--;
@@ -287,12 +287,12 @@ class Universe {
       var p0 = this.places[triangles[i + 0]];
       var p1 = this.places[triangles[i + 1]];
       var p2 = this.places[triangles[i + 2]];
-      if (distanceSq(p0, p1) < this.connectionLengthSq) p0.links.push(p1);
-      if (distanceSq(p0, p2) < this.connectionLengthSq) p0.links.push(p2);
-      if (distanceSq(p1, p0) < this.connectionLengthSq) p1.links.push(p0);
-      if (distanceSq(p1, p2) < this.connectionLengthSq) p1.links.push(p2);
-      if (distanceSq(p2, p0) < this.connectionLengthSq) p2.links.push(p0);
-      if (distanceSq(p2, p1) < this.connectionLengthSq) p2.links.push(p1);
+      if (this.topology.distanceSq(p0, p1) < this.connectionLengthSq) p0.links.push(p1);
+      if (this.topology.distanceSq(p0, p2) < this.connectionLengthSq) p0.links.push(p2);
+      if (this.topology.distanceSq(p1, p0) < this.connectionLengthSq) p1.links.push(p0);
+      if (this.topology.distanceSq(p1, p2) < this.connectionLengthSq) p1.links.push(p2);
+      if (this.topology.distanceSq(p2, p0) < this.connectionLengthSq) p2.links.push(p0);
+      if (this.topology.distanceSq(p2, p1) < this.connectionLengthSq) p2.links.push(p1);
     } // for i
 
     console.timeEnd("GenerateOld2");
@@ -309,7 +309,7 @@ class Universe {
     for (var i = 0; i < this.places.length; i++) {
       var place = this.places[i];
 
-      if (distanceSq(pos, place) < this.gapSq) {
+      if (this.topology.distanceSq(pos, place) < this.gapSq) {
         return false;
       }
     } // for i
@@ -399,7 +399,7 @@ class TopologyCylinder implements Topology {
   } // constructor
 
   distanceSq(p1: Point, p2: Point): number {
-    var nwDistanceSq = distanceSq(p1, p2); // non-wrap distance²
+    var nwDistanceSq = this.distanceSq(p1, p2); // non-wrap distance²
     var wDistanceSq: number; // wrap distance²
     var wDistanceXSq: number;
     if (p1.x <= p2.x) {
@@ -421,31 +421,3 @@ class TopologyCylinder implements Topology {
     return normPoint;
   } // normalize
 } // TopologyCylinder
-
-// ***********************************************
-
-function distanceSq(p1: Point, p2: Point): number {
-  return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
-} // distanceSq
-
-function distance(p1: Point, p2: Point): number {
-  return Math.sqrt(distanceSq(p1, p2));
-} // distance
-
-function distanceCylinderSq(p1: Point, p2: Point, lrBound: Point): number {
-  var nwDistanceSq = distanceSq(p1, p2); // non-wrap distance²
-  var wDistanceSq: number; // wrap distance²
-  var wDistanceXSq: number;
-  if (p1.x <= p2.x) {
-    wDistanceXSq = (p1.x - p2.x + lrBound.x) * (p1.x - p2.x + lrBound.x);
-  }
-  else {
-    wDistanceXSq = (p2.x - p1.x + lrBound.x) * (p2.x - p1.x + lrBound.x);
-  }
-  var wDistanceSq = wDistanceXSq + (p1.y - p2.y) * (p1.y - p2.y);
-  return Math.min(nwDistanceSq, wDistanceSq);
-} // distanceCylinderSq
-
-function distanceCylinder(p1: Point, p2: Point, lrBound: Point): number {
-  return Math.sqrt(distanceCylinderSq(p1, p2, lrBound));
-} // distanceCylinder
