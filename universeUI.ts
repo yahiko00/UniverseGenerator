@@ -297,6 +297,6 @@ function tooltipPlaceHide(event: BaseJQueryEventObject) {
   $(".tooltip").remove();
 }
 
-var universe = new UniverseUI(800, 600, 400, 0.000, 0.020, 1.0);
+var universe = new UniverseUI(160, 100, 10, 0.000, 0.020, 1.0);
 //var universe = new UniverseUI(800, 600, 400, 0.050, 0.020, 0.068);
 //var universe = new UniverseUI(320, 200, 10, 0.050, 0.020, 0.068); // DEBUG
